@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediScan – Handwriting Prescription Reader</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.1/dist/tesseract.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e1f5fe, #ffffff);
+      text-align: center;
+      padding: 30px;
+      color: #2c3e50;
+    }
+    h1 {
+      color: #00796b;
+    }
+    input, button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #00796b;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004d40;
+    }
+    #output {
+      margin-top: 30px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #textOutput {
+      white-space: pre-wrap;
+      font-size: 16px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🩺 MediScan – Read Handwritten Instructions</h1>
+
+  <input type="file" id="imageInput" accept="image/*"/>
+  <br/>
+  <button onclick="runOCR()">🔍 Scan Handwriting</button>
+  <button onclick="speakText()">🔊 Read Instructions</button>
+
+  <div id="output">
+    <h3>💊 Extracted Medicine Instructions:</h3>
+    <div id="textOutput">(Your result will appear here...)</div>
+  </div>
+
+  <script>
+    let filteredText = "";
+
+    function runOCR() {
+      const image = document.getElementById('imageInput').files[0];
+      if (!image) {
+        alert("Please select a prescription image.");
+        return;
+      }
+
+      Tesseract.recognize(image, 'eng', {
+        logger: m => console.log(m)
+      }).then(({ data: { text } }) => {
+        const lines = text.split('\n');
+        const filtered = lines.filter(line =>
+          /tablet|tab|take|mg|dose|daily|night|morning|once|twice|after|before/i.test(line)
+        );
+        filteredText = filtered.join('\n');
+        document.getElementById('textOutput').textContent = filteredText || "No clear medicine instructions found.";
+      }).catch(err => {
+        console.error(err);
+        alert("OCR failed. Try a clearer image.");
+      });
+    }
+
+    function speakText() {
+      if (!filteredText.trim()) {
+        alert("Nothing to read yet! Please scan a prescription.");
+        return;
+      }
+
+      const speak = new SpeechSynthesisUtterance(filteredText);
+      speak.lang = 'en-IN';
+      speechSynthesis.speak(speak);
+    }
+  </script>
+
+</body>
+</html>
